@@ -1,0 +1,65 @@
+Name: Nicholas Luce
+
+Course: CPSC 3220 - 001
+
+Date: 3/6/2018
+
+Project Description:
+	This project was provided to gain experience with threads and synchronization.
+	The contained project is my first, and hopefully my last, go at creating a thread library.
+	Everything I wrote for this project is done in the one mythreads.c file with the acception
+	of the Makefile. I believe that my project was well tested as I tried to cover both
+	cooperative and preemptive tests. I also used tests for the locks and condition variables.
+
+Known Problems:
+	There was one point I did not have much luck with. As you will probably see, I left valgrind
+	a lot to complain about. I could not figure out where exactly to place the deallocations.
+	I tried to call a free function in threadExit and threadJoin but was breaking my code
+	so much that I just decided that compiling would be better than not compiling.
+
+	I also still have no clue if I did threadExit correctly. It could be completely wrong.
+	I guess that was just a misinterpretation on my part.
+
+Design:
+	Within the mythreads.c file you will find:
+	1) A struct, Thread, for keeping track of my thread attributes along with pointers to keep a
+		list like structure.
+	2) A struct, Lock, for keeping track of my locks and condition variables globally.
+	3) Two wrappers to disable/enable interrupts, taken from the project description.
+	4) One function wrapper for the function pointer passed into threadCreate.
+			This also served as a way to close a function after it returned a result.
+	5) threadInit() -
+			- Initializes the main thread and structs mentioned above.
+	6) threadCreate() -
+			- Creates a new context and thread for each call. The pointer and arguements are
+				passed on to the do_func wrapper. This also returns the id for the thread.
+	7) threadYield() -
+			- Searches for a thread that isn't finished. I flip a coin to choose between
+				starting from the front or the back so it doesn't flip flop between two waiting contexts
+			- Also uses swapcontext once it finds a thread to switch to, this allows the context
+				to be resumed at a later time
+	8) threadJoin() -
+			- First, it finds the correct thread as specified. If that thread is done or doesn't exist
+				then then it skips the while loop.
+			- The while loop is there to force it to swap back and forth between the two contexts so
+				that the function runs till completion and the caller waits till it does.
+			- This function also provides the location of the result of the thread for a return
+	9) threadExit() -
+			- This function sets the result in the thread and returns the context to the callee
+			- It also exits the program if called as the main thread
+	10) threadLock() - 
+			- This function provides a wait loop for threads needing access to a crucial section
+			- The user is incharge of unlocking and I provide no user adaptation techniques.
+	11) threadUnlock() -
+			- Sets the lock to unlocked no matter what, the user is incharge of keeping track of
+				the logic of locking and unlocking
+	12) threadWait() -
+			- First, this unlocks the specified lock
+			- induces the current thread into a wait loop until the specified condition is set
+			- once the thread breaks out of the while loop, the condition is reset and the lock is
+			- reaquired
+	13) threadSignal() -
+			- Sets the condition to free one thread from the wait loop. The function then yields to
+			- the another thread before returning
+	14) freeStack() -
+			- My go at the deallocation of the thread stack. Not implemented.
